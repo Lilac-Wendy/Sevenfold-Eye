@@ -1,0 +1,8 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://dpb6x05wejmh2"]
+
+[resource]
+uv1_scale = Vector3(1, 1, 0.5)
+uv1_offset = Vector3(0.015, 0.48, -1.75)
+uv1_triplanar = true
+uv2_scale = Vector3(3, 3, 3)
+texture_filter = 0

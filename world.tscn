@@ -1,0 +1,131 @@
+[gd_scene load_steps=14 format=3 uid="uid://b76hktigreapb"]
+
+[ext_resource type="Environment" uid="uid://gdv7de8xtoo4" path="res://Assets/sky.tres" id="1_aqk2v"]
+[ext_resource type="PackedScene" uid="uid://cvsfkwlu4okae" path="res://platform.tscn" id="1_fj7yv"]
+[ext_resource type="PackedScene" uid="uid://biswlo8wva43r" path="res://Characters/Player/player.tscn" id="2_tlwt5"]
+[ext_resource type="Script" uid="uid://mnjkp5w7xsq" path="res://state_label.gd" id="3_tlwt5"]
+[ext_resource type="Texture2D" uid="uid://cmcw17766pbik" path="res://Assets/World/Tileset/sand.png" id="4_036b0"]
+[ext_resource type="Script" uid="uid://bd046eokvcnu2" path="res://addons/phantom_camera/scripts/phantom_camera_host/phantom_camera_host.gd" id="4_gbfbk"]
+[ext_resource type="Script" uid="uid://csjccrhj5wnx7" path="res://addons/phantom_camera/scripts/phantom_camera/phantom_camera_3d.gd" id="5_ioo17"]
+[ext_resource type="Script" uid="uid://8umksf8e80fw" path="res://addons/phantom_camera/scripts/resources/tween_resource.gd" id="6_wse8f"]
+[ext_resource type="Script" uid="uid://b8hhnqsugykly" path="res://addons/phantom_camera/scripts/resources/camera_3d_resource.gd" id="7_ioo17"]
+
+[sub_resource type="Resource" id="Resource_ic0uy"]
+script = ExtResource("6_wse8f")
+duration = 0.5
+transition = 7
+ease = 3
+
+[sub_resource type="Resource" id="Resource_wse8f"]
+script = ExtResource("7_ioo17")
+fov = 60.0
+size = 0.05
+far = 15.0
+metadata/_custom_type_script = "uid://b8hhnqsugykly"
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dwbse"]
+albedo_texture = ExtResource("4_036b0")
+uv1_scale = Vector3(0.2, 0.2, 0.2)
+uv1_triplanar = true
+uv1_world_triplanar = true
+texture_filter = 5
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_tlwt5"]
+material = SubResource("StandardMaterial3D_dwbse")
+
+[node name="World" type="Node3D"]
+process_mode = 1
+
+[node name="SubViewportContainer" type="SubViewportContainer" parent="."]
+texture_filter = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch = true
+
+[node name="SubViewport" type="SubViewport" parent="SubViewportContainer"]
+handle_input_locally = false
+use_hdr_2d = true
+size = Vector2i(1280, 720)
+render_target_update_mode = 4
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="SubViewportContainer/SubViewport"]
+environment = ExtResource("1_aqk2v")
+
+[node name="Foreground" parent="SubViewportContainer/SubViewport" instance=ExtResource("1_fj7yv")]
+transform = Transform3D(1, 0, 0, 0, 0.99999994, 0, 0, 0, 1, 0, 2.1654048, 10)
+
+[node name="Middleground" parent="SubViewportContainer/SubViewport" instance=ExtResource("1_fj7yv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.1654048, 0)
+
+[node name="Background" parent="SubViewportContainer/SubViewport" instance=ExtResource("1_fj7yv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.1654048, -10)
+
+[node name="player" parent="SubViewportContainer/SubViewport" instance=ExtResource("2_tlwt5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.004744351, 2.8041492, 0)
+disable_mode = 1
+axis_lock_linear_z = true
+move_speed = 4.0
+jump_force = 6.0
+gravity = 15.0
+move_threshold = 0.5
+
+[node name="SpringArm3D" type="SpringArm3D" parent="SubViewportContainer/SubViewport/player"]
+transform = Transform3D(1, 0, 0, 0, 0.99999994, 0, 0, 0, 0.99999994, 0, 0, 0)
+collision_mask = 0
+spring_length = 5.0
+
+[node name="PhantomCamera3D" type="Node3D" parent="SubViewportContainer/SubViewport/player/SpringArm3D" node_paths=PackedStringArray("follow_target")]
+transform = Transform3D(0.999977, -1.5476828e-09, -1.5463775e-09, 1.5463559e-09, 0.9999759, -0.00085842976, 1.5476799e-09, 0.000858415, 0.99999315, 0.004744351, 2.8041492, 2)
+rotation_order = 0
+top_level = true
+script = ExtResource("5_ioo17")
+follow_mode = 2
+follow_target = NodePath("../..")
+tween_resource = SubResource("Resource_ic0uy")
+camera_3d_resource = SubResource("Resource_wse8f")
+follow_offset = Vector3(0, 0, 2)
+follow_damping = true
+follow_damping_value = Vector3(0.2, 0.3, 0)
+dead_zone_width = 0.5
+dead_zone_height = 0.4
+show_viewfinder_in_play = true
+vertical_rotation_offset = 0.5131268000863325
+look_at_damping = true
+
+[node name="PlayerCamera" type="Camera3D" parent="SubViewportContainer/SubViewport/player/SpringArm3D"]
+physics_interpolation_mode = 1
+transform = Transform3D(0.999977, -1.5476828e-09, -1.5463775e-09, 1.5463559e-09, 0.9999759, -0.00085842976, 1.5476799e-09, 0.000858415, 0.99999315, 0, 0, 2)
+current = true
+fov = 60.0
+size = 0.05
+far = 15.0
+
+[node name="PhantomCameraHost" type="Node" parent="SubViewportContainer/SubViewport/player/SpringArm3D/PlayerCamera"]
+process_priority = 300
+process_physics_priority = 300
+script = ExtResource("4_gbfbk")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="SubViewportContainer/SubViewport"]
+transform = Transform3D(0.4415112, 0.8816974, 0.16636568, -0.62088525, 0.1663657, 0.76604444, 0.64774185, -0.44151112, 0.6208852, -0.20192218, 13.371029, 7.57631)
+light_color = Color(1.1976054, 0.9945455, 0.8564048, 1)
+light_energy = 0.5
+light_indirect_energy = 1.93
+light_angular_distance = 17.06
+light_specular = 2.0
+shadow_enabled = true
+directional_shadow_mode = 0
+
+[node name="Voidground" type="Node3D" parent="SubViewportContainer/SubViewport"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3090553, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/Voidground"]
+transform = Transform3D(250, 0, 0, 0, 1, 0, 0, 0, 250, 0, 0.7179711, 0)
+mesh = SubResource("PlaneMesh_tlwt5")
+
+[node name="StateLabel" type="Label" parent="SubViewportContainer"]
+layout_mode = 2
+text = "aaaaaaaaaaaaaaaa EU VOU"
+script = ExtResource("3_tlwt5")

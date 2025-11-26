@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://dh51i1q4l8ghn"]
+
+[ext_resource type="Script" uid="uid://bf0ml816t3vj0" path="res://Tail/TailSegment.cs" id="1_55s4h"]
+
+[node name="TailSegment" type="Node2D"]
+script = ExtResource("1_55s4h")

@@ -1,0 +1,28 @@
+[gd_resource type="Environment" load_steps=6 format=3 uid="uid://gdv7de8xtoo4"]
+
+[ext_resource type="Shader" uid="uid://bru0g4twf72cr" path="res://sky.gdshader" id="1_i5e18"]
+[ext_resource type="Texture2D" uid="uid://dhkyd073slweo" path="res://Assets/Sky_002.png" id="2_jalsx"]
+[ext_resource type="Texture2D" uid="uid://b2gff6bgiy173" path="res://Assets/Sky_001.png" id="3_b76bw"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ioo17"]
+shader = ExtResource("1_i5e18")
+shader_parameter/sky_tex = ExtResource("2_jalsx")
+shader_parameter/energy = 1.30000001937156
+shader_parameter/gamma = 0.3330000158175
+shader_parameter/tint_ramp = ExtResource("3_b76bw")
+shader_parameter/scale = Vector3(1, 0.5, 1)
+shader_parameter/triplanar_blend_power = 4.0
+shader_parameter/seamless_blend = 0.30000001425
+
+[sub_resource type="Sky" id="Sky_wse8f"]
+sky_material = SubResource("ShaderMaterial_ioo17")
+
+[resource]
+background_mode = 2
+background_color = Color(0.663666, 0.48687375, 0.36894885, 0.11764706)
+sky = SubResource("Sky_wse8f")
+sky_custom_fov = 60.0
+sky_rotation = Vector3(0, 3.4906585, 0)
+ambient_light_source = 3
+reflected_light_source = 2
+glow_intensity = 1.44
