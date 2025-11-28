@@ -1,4 +1,4 @@
-[gd_scene load_steps=83 format=3 uid="uid://biswlo8wva43r"]
+[gd_scene load_steps=101 format=3 uid="uid://biswlo8wva43r"]
 
 [ext_resource type="Script" uid="uid://xkptmwsjxc6y" path="res://player.gd" id="1_4flbx"]
 [ext_resource type="Texture2D" uid="uid://c72c6tnpr6h2y" path="res://Characters/Player/Assets/CatSheet.png" id="3_hqtel"]
@@ -32,7 +32,7 @@ tracks/0/keys = {
 tracks/1/type = "value"
 tracks/1/imported = false
 tracks/1/enabled = true
-tracks/1/path = NodePath("AnimatedSprite3D/Viewport:offset:y")
+tracks/1/path = NodePath("AnimatedSprite3D:offset:y")
 tracks/1/interp = 2
 tracks/1/loop_wrap = true
 tracks/1/keys = {
@@ -44,7 +44,7 @@ tracks/1/keys = {
 tracks/2/type = "value"
 tracks/2/imported = false
 tracks/2/enabled = true
-tracks/2/path = NodePath("AnimatedSprite3D:offset:y")
+tracks/2/path = NodePath("AnimatedSprite3D/Viewport:offset:y")
 tracks/2/interp = 2
 tracks/2/loop_wrap = true
 tracks/2/keys = {
@@ -78,7 +78,7 @@ tracks/0/keys = {
 tracks/1/type = "value"
 tracks/1/imported = false
 tracks/1/enabled = true
-tracks/1/path = NodePath("AnimatedSprite3D/Viewport:offset:y")
+tracks/1/path = NodePath("AnimatedSprite3D:offset:y")
 tracks/1/interp = 2
 tracks/1/loop_wrap = true
 tracks/1/keys = {
@@ -90,7 +90,7 @@ tracks/1/keys = {
 tracks/2/type = "value"
 tracks/2/imported = false
 tracks/2/enabled = true
-tracks/2/path = NodePath("AnimatedSprite3D:offset:y")
+tracks/2/path = NodePath("AnimatedSprite3D/Viewport:offset:y")
 tracks/2/interp = 2
 tracks/2/loop_wrap = true
 tracks/2/keys = {
@@ -124,7 +124,7 @@ tracks/0/keys = {
 tracks/1/type = "value"
 tracks/1/imported = false
 tracks/1/enabled = true
-tracks/1/path = NodePath("AnimatedSprite3D/Viewport:offset:y")
+tracks/1/path = NodePath("AnimatedSprite3D:offset:y")
 tracks/1/interp = 2
 tracks/1/loop_wrap = true
 tracks/1/keys = {
@@ -136,7 +136,7 @@ tracks/1/keys = {
 tracks/2/type = "value"
 tracks/2/imported = false
 tracks/2/enabled = true
-tracks/2/path = NodePath("AnimatedSprite3D:offset:y")
+tracks/2/path = NodePath("AnimatedSprite3D/Viewport:offset:y")
 tracks/2/interp = 2
 tracks/2/loop_wrap = true
 tracks/2/keys = {
@@ -170,7 +170,7 @@ tracks/0/keys = {
 tracks/1/type = "value"
 tracks/1/imported = false
 tracks/1/enabled = true
-tracks/1/path = NodePath("AnimatedSprite3D/Viewport:offset:y")
+tracks/1/path = NodePath("AnimatedSprite3D:offset:y")
 tracks/1/interp = 2
 tracks/1/loop_wrap = true
 tracks/1/keys = {
@@ -182,7 +182,7 @@ tracks/1/keys = {
 tracks/2/type = "value"
 tracks/2/imported = false
 tracks/2/enabled = true
-tracks/2/path = NodePath("AnimatedSprite3D:offset:y")
+tracks/2/path = NodePath("AnimatedSprite3D/Viewport:offset:y")
 tracks/2/interp = 2
 tracks/2/loop_wrap = true
 tracks/2/keys = {
@@ -479,6 +479,78 @@ region = Rect2(224, 32, 32, 32)
 atlas = ExtResource("3_hqtel")
 region = Rect2(256, 32, 32, 32)
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_hvtal"]
+atlas = ExtResource("3_hqtel")
+region = Rect2(192, 96, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_8fwmd"]
+atlas = ExtResource("3_hqtel")
+region = Rect2(224, 96, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jec2i"]
+atlas = ExtResource("3_hqtel")
+region = Rect2(256, 96, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_kpgn3"]
+atlas = ExtResource("3_hqtel")
+region = Rect2(288, 96, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6ip0i"]
+atlas = ExtResource("3_hqtel")
+region = Rect2(320, 96, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5jopl"]
+atlas = ExtResource("3_hqtel")
+region = Rect2(352, 96, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_yee8r"]
+atlas = ExtResource("3_hqtel")
+region = Rect2(288, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_v0k0y"]
+atlas = ExtResource("3_hqtel")
+region = Rect2(320, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_s0xdn"]
+atlas = ExtResource("3_hqtel")
+region = Rect2(352, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_atvgk"]
+atlas = ExtResource("3_hqtel")
+region = Rect2(192, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bkulq"]
+atlas = ExtResource("3_hqtel")
+region = Rect2(224, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_e3hdo"]
+atlas = ExtResource("3_hqtel")
+region = Rect2(256, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_8hpgr"]
+atlas = ExtResource("3_hqtel")
+region = Rect2(288, 64, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_8kxwp"]
+atlas = ExtResource("3_hqtel")
+region = Rect2(320, 64, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_12h2v"]
+atlas = ExtResource("3_hqtel")
+region = Rect2(352, 64, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_yhbe1"]
+atlas = ExtResource("3_hqtel")
+region = Rect2(288, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6pscn"]
+atlas = ExtResource("3_hqtel")
+region = Rect2(320, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vqjgt"]
+atlas = ExtResource("3_hqtel")
+region = Rect2(352, 0, 32, 32)
+
 [sub_resource type="SpriteFrames" id="SpriteFrames_7hik5"]
 animations = [{
 "frames": [{
@@ -680,6 +752,90 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
+"texture": SubResource("AtlasTexture_hvtal")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_8fwmd")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_jec2i")
+}],
+"loop": true,
+"name": &"JUMP_NORTH",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_kpgn3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6ip0i")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5jopl")
+}],
+"loop": true,
+"name": &"JUMP_NORTHEAST",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_yee8r")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_v0k0y")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_s0xdn")
+}],
+"loop": true,
+"name": &"JUMP_NORTHWEST",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_atvgk")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bkulq")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_e3hdo")
+}],
+"loop": true,
+"name": &"JUMP_SOUTH",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_8hpgr")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_8kxwp")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_12h2v")
+}],
+"loop": true,
+"name": &"JUMP_SOUTHEAST",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_yhbe1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6pscn")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vqjgt")
+}],
+"loop": true,
+"name": &"JUMP_SOUTHWEST",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
 "texture": SubResource("AtlasTexture_8k5s7")
 }, {
 "duration": 1.0,
@@ -826,6 +982,10 @@ attack_gravity_mode = 1
 [node name="AttackComboTimer" type="Timer" parent="."]
 wait_time = 2.0
 
+[node name="SwitchCooldown" type="Timer" parent="."]
+wait_time = 5.0
+one_shot = true
+
 [node name="AnimationHSM" type="LimboHSM" parent="." node_paths=PackedStringArray("idle_state", "move_state", "jumping_state", "attack_state", "platform_state")]
 script = ExtResource("8_b26j0")
 idle_state = NodePath("IdleState")
@@ -848,11 +1008,8 @@ script = ExtResource("10_b71o8")
 animation_player = NodePath("../../SpriteSheetPlayer")
 metadata/_custom_type_script = "uid://cxfktnj0bcy7h"
 
-[node name="PlatformSwitch" type="LimboState" parent="AnimationHSM" node_paths=PackedStringArray("platform_animation_player", "normal_animation_player", "player_ref")]
+[node name="PlatformSwitch" type="LimboState" parent="AnimationHSM"]
 script = ExtResource("10_u2wkb")
-platform_animation_player = NodePath("../../PlatformSwitchPlayer")
-normal_animation_player = NodePath("../../SpriteSheetPlayer")
-player_ref = NodePath("../..")
 metadata/_custom_type_script = "uid://cxfktnj0bcy7h"
 
 [node name="Attack" type="LimboState" parent="AnimationHSM" node_paths=PackedStringArray("animation_player")]
@@ -931,7 +1088,7 @@ shaded = true
 alpha_cut = 2
 texture_filter = 0
 sprite_frames = SubResource("SpriteFrames_7hik5")
-animation = &"IDLE_EAST"
+animation = &"JUMP_NORTHEAST"
 speed_scale = 2.0
 
 [node name="Viewport" type="Sprite3D" parent="AnimatedSprite3D"]

@@ -43,7 +43,3 @@ func _init_hsm() -> void:
 
 	# Conectar mudança de estado para debug, se quiser
 	self.connect("active_state_changed", Callable(self, "_on_state_changed"))
-
-func _on_state_changed(current: LimboState, previous: LimboState) -> void:
-	# opcional: log para ver trocas de estado
-	print("[HSM] Estado trocado: ", previous.name, " → ", current.name)

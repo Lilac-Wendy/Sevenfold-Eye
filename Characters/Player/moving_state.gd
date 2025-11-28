@@ -6,9 +6,12 @@ extends LimboState
 
 var player
 var current_animation: String = ""
+var move_timer: float = 0.0
+var move_time_threshold: float = 0.1  # Pequeno delay para evitar oscilação
 
 func _enter(_msg := {}) -> void:
 	player = get_agent()
+	move_timer = 0.0
 	_update_animation()
 
 func _update(delta: float) -> void:
@@ -20,8 +23,13 @@ func _update(delta: float) -> void:
 	# Atualiza a animação sempre que a direção mudar
 	_update_animation()
 
+	# CORREÇÃO: Sistema com timer para evitar oscilação
 	if input_x == 0:
-		dispatch(EVENT_FINISHED)
+		move_timer += delta
+		if move_timer >= move_time_threshold:
+			dispatch(EVENT_FINISHED)
+	else:
+		move_timer = 0.0  # Reset timer se ainda está se movendo
 
 func _update_animation() -> void:
 	if not player or not animation_player:

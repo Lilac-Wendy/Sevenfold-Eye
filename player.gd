@@ -45,6 +45,7 @@ var _jump_buffer_timer: float = 0.0
 # === REFERÊNCIAS
 # ==========================
 @onready var platform_animation_player: AnimationPlayer = $PlatformSwitchPlayer
+@onready var sprite_animation_player: AnimationPlayer = $SpriteSheetPlayer
 @onready var anim_hsm: LimboHSM = $AnimationHSM
 @onready var tail_container: Node3D = $TailContainer
 @onready var tail_animation_player: AnimationPlayer = $TailPlayer
@@ -52,11 +53,12 @@ var _jump_buffer_timer: float = 0.0
 
 @onready var AttackComboTimer: Timer = $AttackComboTimer
 @onready var AttackCooldownTimer: Timer = $AttackCooldownTimer
+@onready var SwitchCooldown: Timer = $SwitchCooldown
 
 # ==========================
-# === ESTADO DO JOGO
+# === ESTADO DO JOGO (CORRIGIDO)
 # ==========================
-enum State { IDLE, WALK, JUMP, FALL, ATTACK, TRANSITION }
+enum State { IDLE, MOVING, JUMPING, PLATFORM_SWITCH, ATTACK }
 var current_state: State = State.IDLE
 
 enum Platform { A = 0, B = 1, C = 2 }
@@ -72,14 +74,178 @@ var current_combo_index := 0
 # Física interna
 var cat_velocity_x: float = 0.0
 
+# Variável para controlar se o HSM está pronto
+var _hsm_ready: bool = false
+
 func _ready() -> void:
 	global_position.z = 0.0
 	_setup_timers()
+	
+	# Inicialização mais simples do HSM
+	call_deferred("_initialize_hsm")
+	
+	# DEBUG: detectar quando cooldown termina
+	if SwitchCooldown and not SwitchCooldown.timeout.is_connected(_on_switch_cooldown_finished):
+		SwitchCooldown.timeout.connect(_on_switch_cooldown_finished)
+
+func _initialize_hsm() -> void:
+	"""Inicializa o HSM de forma segura e conecta sinais necessários"""
+	if anim_hsm:
+		# conecta state_changed se existir
+		if anim_hsm.has_signal("state_changed"):
+			if not anim_hsm.state_changed.is_connected(_on_hsm_state_changed):
+				anim_hsm.state_changed.connect(_on_hsm_state_changed)
+			print("Sinal state_changed conectado com sucesso")
+		else:
+			print("HSM não possui signal 'state_changed' — pulando conexão")
+		_hsm_ready = true
+		print("HSM inicializado com sucesso")
+	else:
+		push_warning("HSM não encontrado - verifique a cena do player")
 
 func _setup_timers() -> void:
-	AttackComboTimer.one_shot = true
+	AttackComboTimer.one_shot = true 
 	AttackCooldownTimer.one_shot = true
+	SwitchCooldown.one_shot = true
+	# SwitchCooldown.wait_time = 0.3
 
+# ==========================
+# === CONTROLE DO HSM
+# ==========================
+func set_hsm_active(active: bool) -> void:
+	if anim_hsm and _hsm_ready:
+		anim_hsm.set_active(active)
+		print("HSM ", "ativado" if active else "desativado")
+
+# ==========================
+# === COOLDOWN DE TROCA DE PLATAFORMA (COM DEBUG)
+# ==========================
+func can_switch_platform() -> bool:
+	var ready := SwitchCooldown.time_left <= 0 and not is_transitioning
+
+	if not ready:
+		print("[PlatformSwitch] BLOQUEADO → cooldown=", SwitchCooldown.time_left, " | transitioning=", is_transitioning)
+	else:
+		print("[PlatformSwitch] ✔ Pode trocar de plataforma")
+
+	return ready
+
+func start_switch_cooldown() -> void:
+	print("[PlatformSwitch] Cooldown iniciado (", SwitchCooldown.wait_time, "s)")
+	SwitchCooldown.start()
+
+func _on_switch_cooldown_finished() -> void:
+	print("[PlatformSwitch] Cooldown encerrado — troca permitida novamente")
+
+# ==========================
+# === SISTEMA DE ANIMAÇÃO DE PLATAFORMA
+# ==========================
+func play_platform_transition_animation(current_platform: int, target_platform: int, input_dir: Vector2) -> bool:
+	# INICIA COOLDOWN ANTES DE QUALQUER OUTRA COISA
+	start_switch_cooldown()
+	
+	# DESATIVA O HSM durante a transição para evitar interferência
+	set_hsm_active(false)
+	
+	# DETERMINA O NOME DA ANIMAÇÃO BASEADO NAS PLATAFORMAS
+	var anim_name = ""
+	if current_platform == Platform.A and target_platform == Platform.B:
+		anim_name = "Jump_A_to_B"
+	elif current_platform == Platform.B and target_platform == Platform.A:
+		anim_name = "Jump_B_to_A"
+	elif current_platform == Platform.B and target_platform == Platform.C:
+		anim_name = "Jump_B_to_C"
+	elif current_platform == Platform.C and target_platform == Platform.B:
+		anim_name = "Jump_C_to_B"
+	
+	if anim_name == "":
+		print("✗ Nenhuma animação encontrada para esta transição")
+		set_hsm_active(true)
+		return false
+	
+	# PARA todas as animações atuais
+	if sprite_animation_player and sprite_animation_player.is_playing():
+		sprite_animation_player.stop()
+	
+	if platform_animation_player and platform_animation_player.is_playing():
+		platform_animation_player.stop()
+	
+	# Toca no SpriteSheetPlayer (SPRITE)
+	var sprite_success = false
+	var sprite_anim_name = _get_sprite_animation_name(current_platform, target_platform, input_dir)
+	if sprite_animation_player and sprite_animation_player.has_animation(sprite_anim_name):
+		sprite_animation_player.play(sprite_anim_name)
+		sprite_success = true
+	else:
+		# Fallback
+		if sprite_animation_player and sprite_animation_player.has_animation(anim_name):
+			sprite_animation_player.play(anim_name)
+			sprite_success = true
+	
+	# Toca no PlatformSwitchPlayer (FÍSICA)
+	var physics_success = false
+	if platform_animation_player and platform_animation_player.has_animation(anim_name):
+		platform_animation_player.play(anim_name)
+		physics_success = true
+		
+		# Conecta o sinal para detectar fim da animação (apenas se não estiver conectado)
+		if not platform_animation_player.animation_finished.is_connected(_on_platform_animation_finished):
+			platform_animation_player.animation_finished.connect(_on_platform_animation_finished)
+	else:
+		set_hsm_active(true)
+	
+	return sprite_success or physics_success
+
+func _get_sprite_animation_name(current_platform: int, target_platform: int, input_dir: Vector2) -> String:
+	var is_moving_up = target_platform > current_platform
+	
+	var horizontal = 0
+	if input_dir.x > 0.1:
+		horizontal = 1
+	elif input_dir.x < -0.1:
+		horizontal = -1
+	
+	if is_moving_up:
+		match horizontal:
+			1:  return "JUMP_NORTHEAST"
+			-1: return "JUMP_NORTHWEST"
+			_:   return "JUMP_NORTH"
+	else:
+		match horizontal:
+			1:  return "JUMP_SOUTHEAST"
+			-1: return "JUMP_SOUTHWEST"
+			_:   return "JUMP_SOUTH"
+
+func _on_platform_animation_finished(anim_name: String):
+	# Desconecta o sinal temporariamente para evitar chamadas múltiplas
+	if platform_animation_player and platform_animation_player.animation_finished.is_connected(_on_platform_animation_finished):
+		platform_animation_player.animation_finished.disconnect(_on_platform_animation_finished)
+	
+	# REATIVA O HSM antes de finalizar a transição
+	set_hsm_active(true)
+	
+	# Finaliza a transição
+	if is_transitioning and target_platform_index != -1:
+		current_platform = target_platform_index
+		target_platform_index = -1
+		is_transitioning = false
+		current_state = State.IDLE
+
+# ==========================
+# === MANIPULAÇÃO DE SINAL DO HSM
+# ==========================
+func _on_hsm_state_changed(new_state, old_state) -> void:
+	# Verificação mais segura para evitar erros
+	if new_state and new_state is Object and new_state.has_method("get_name"):
+		print("HSM mudou para estado: ", new_state.get_name())
+	elif new_state:
+		print("HSM mudou para estado: ", str(new_state))
+	else:
+		print("HSM mudou para estado: nulo")
+
+# ==========================
+# === FÍSICA E CONTROLES
+# ==========================
 func _apply_hybrid_cat_physics(input_dir: Vector2, on_floor: bool, delta: float) -> void:
 	var desired: float = input_dir.x * cat_max_speed
 
@@ -108,21 +274,19 @@ func _apply_hybrid_cat_physics(input_dir: Vector2, on_floor: bool, delta: float)
 		
 	velocity.x = cat_velocity_x
 
-
 func _physics_process(delta: float) -> void:
 	var on_floor := is_on_floor()
 	var input_dir: Vector2 = Input.get_vector("left", "right", "up", "down")
 	var is_moving: bool = input_dir.length() > move_threshold
 
-	# Se estiver em transição de plataforma, bloqueia a lógica normal
+	# Se estiver em transição de plataforma, bloqueia TUDO
 	if is_transitioning:
-		# CORREÇÃO: Zera a velocidade Y durante a transição para evitar voos/caídas
 		velocity.y = 0
-		
+
 		# Captura input de pulo DURANTE transição
 		if Input.is_action_just_pressed("ui_accept"):
 			_jump_buffer_timer = jump_buffer_time
-			
+
 		handle_tail_flip(input_dir, is_moving)
 		update_facing(input_dir)
 		move_and_slide()
@@ -131,62 +295,89 @@ func _physics_process(delta: float) -> void:
 	# Input de ataque
 	if Input.is_action_just_pressed("attack") and current_state != State.ATTACK:
 		_attack()
-	
-	# Lógica normal (sem transição)
-	# --- TROCA DE PLATAFORMA ---
+
+	# --- TROCA DE PLATAFORMA COM COOLDOWN CORRIGIDO ---
+	# DEBUG INPUT PARA TROCAR DE PLATAFORMA (logs mais claros)
+	if Input.is_action_just_pressed("up"):
+		print("[Input] Tentando subir plataforma…")
+	if Input.is_action_just_pressed("down"):
+		print("[Input] Tentando descer plataforma…")
+
 	if Input.is_action_just_pressed("up") and current_state != State.ATTACK:
-		var attempt = int(current_platform) - 1
-		if attempt >= 0:
-			target_platform_index = attempt
-			# CORREÇÃO: Zera velocidade Y ao iniciar transição
-			velocity.y = 0
-			is_transitioning = true
-			current_state = State.TRANSITION
-			_play_hsm("platform_switch")
-			
+		if can_switch_platform():
+			var attempt = int(current_platform) + 1
+			if attempt <= 2:
+				print("[PlatformSwitch] Subida permitida")
+				target_platform_index = attempt
+				velocity.y = 0
+				is_transitioning = true
+				current_state = State.PLATFORM_SWITCH
+				# TOCA ANIMAÇÃO IMEDIATAMENTE
+				var anim_success = play_platform_transition_animation(int(current_platform), attempt, input_dir)
+				if not anim_success:
+					# Se não achou animação, finaliza instantaneamente
+					current_platform = attempt
+					is_transitioning = false
+					current_state = State.IDLE
+			else:
+				print("[PlatformSwitch] ❌ Subida negada — tentativa fora de limites")
+		else:
+			print("[PlatformSwitch] ❌ Subida negada — cooldown ativo")
+
 	elif Input.is_action_just_pressed("down") and current_state != State.ATTACK:
-		var attempt2 = int(current_platform) + 1
-		if attempt2 <= 2:
-			target_platform_index = attempt2
-			# CORREÇÃO: Zera velocidade Y ao iniciar transição
-			velocity.y = 0
-			current_state = State.TRANSITION
-			is_transitioning = true
-			_play_hsm("platform_switch")
-	else:
-		# resto dos estados (movimento, pulo etc)
+		if can_switch_platform():
+			var attempt2 = int(current_platform) - 1
+			if attempt2 >= 0:
+				print("[PlatformSwitch] Descida permitida")
+				target_platform_index = attempt2
+				velocity.y = 0
+				is_transitioning = true
+				current_state = State.PLATFORM_SWITCH
+				# TOCA ANIMAÇÃO IMEDIATAMENTE
+				var anim_success2 = play_platform_transition_animation(int(current_platform), attempt2, input_dir)
+				if not anim_success2:
+					current_platform = attempt2
+					is_transitioning = false
+					current_state = State.IDLE
+			else:
+				print("[PlatformSwitch] ❌ Descida negada — tentativa fora de limites")
+		else:
+			print("[PlatformSwitch] ❌ Descida negada — cooldown ativo")
+
+	# Lógica normal de estados (apenas se não estiver em transição)
+	if not is_transitioning:
 		match current_state:
-			State.IDLE, State.WALK:
+			State.IDLE, State.MOVING:
 				if Input.is_action_just_pressed("ui_accept"):
 					_jump_buffer_timer = jump_buffer_time
 				if (_jump_buffer_timer > 0.0) and on_floor:
 					_jump_buffer_timer = 0.0
 					_jump()
 				elif is_moving and on_floor:
-					if current_state != State.WALK:
-						current_state = State.WALK
+					if current_state != State.MOVING:
+						current_state = State.MOVING
 						_play_hsm("move")
 				elif not is_moving and on_floor:
 					if current_state != State.IDLE:
 						current_state = State.IDLE
 						_play_hsm("idle")
 				elif not on_floor:
-					current_state = State.JUMP if velocity.y > 0 else State.FALL
-					_play_hsm("jump" if velocity.y > 0 else "fall")
+					current_state = State.JUMPING
+					_play_hsm("jump")
 
-			State.JUMP, State.FALL:
+			State.JUMPING:
 				if on_floor:
-					current_state = State.WALK if is_moving else State.IDLE
+					current_state = State.MOVING if is_moving else State.IDLE
 					_play_hsm("move" if is_moving else "idle")
 
 			State.ATTACK:
 				if Input.is_action_just_pressed("ui_accept") and on_floor:
 					_jump()
 
-	# ADICIONAR: Buffer de pulo GLOBAL (captura input em qualquer estado)
+	# Buffer de pulo GLOBAL
 	if Input.is_action_just_pressed("ui_accept"):
 		_jump_buffer_timer = jump_buffer_time
-	
+
 	# Atualiza timers de pulo
 	if on_floor:
 		_coyote_timer = coyote_time
@@ -198,15 +389,12 @@ func _physics_process(delta: float) -> void:
 	update_facing(input_dir)
 	_apply_hybrid_cat_physics(input_dir, on_floor, delta)
 
-	# CORREÇÃO MELHORADA: Verificação de pulo APÓS transição de plataforma
-	# Usando um sistema mais robusto que verifica se acabou de sair de uma transição
+	# Verificação de pulo APÓS transição de plataforma
 	if not is_transitioning and _jump_buffer_timer > 0.0:
-		# Pequeno delay para garantir que a física esteja estabilizada
 		if on_floor or _coyote_timer > 0.0:
 			_jump_buffer_timer = 0.0
 			_jump()
 
-	
 	# Gravidade customizada durante ataque
 	if current_state == State.ATTACK and not on_floor:
 		match attack_gravity_mode:
@@ -226,7 +414,7 @@ func _physics_process(delta: float) -> void:
 					_current_stall_timer -= delta
 				else:
 					velocity.y -= gravity * delta
-	elif not on_floor and not is_transitioning:  # CORREÇÃO: Não aplica gravidade durante transição
+	elif not on_floor and not is_transitioning:
 		if velocity.y > 0 and not Input.is_action_pressed("ui_accept"):
 			velocity.y -= gravity * jump_cut_multiplier * delta
 		else:
@@ -235,11 +423,11 @@ func _physics_process(delta: float) -> void:
 		velocity.y = max(velocity.y, 0)
 
 	move_and_slide()
-	
+
 func _jump() -> void:
 	if _coyote_timer > 0.0 or is_on_floor():
 		velocity.y = jump_force
-		current_state = State.JUMP
+		current_state = State.JUMPING
 		_play_hsm("jump")
 		_coyote_timer = 0.0
 		_jump_buffer_timer = 0.0
@@ -261,7 +449,7 @@ func update_facing(input_dir: Vector2) -> void:
 
 func handle_tail_flip(input_dir: Vector2, is_moving: bool) -> void:
 	if current_state != State.ATTACK:
-		if tail_animation_player.has_animation("IDLE"):
+		if tail_animation_player and tail_animation_player.has_animation("IDLE"):
 			if not tail_animation_player.is_playing() or tail_animation_player.current_animation != "IDLE":
 				tail_animation_player.play("IDLE")
 	if is_moving and abs(input_dir.x) > move_threshold:
@@ -272,7 +460,11 @@ func handle_tail_flip(input_dir: Vector2, is_moving: bool) -> void:
 		last_facing_direction_x = new_facing
 
 func _play_hsm(event_name: String, cargo: Dictionary = {}) -> void:
-	if not anim_hsm:
+	if not anim_hsm or not _hsm_ready:
 		return
 	cargo["player_ref"] = self
-	anim_hsm.dispatch(event_name, cargo)
+	# dispatch pode falhar se o HSM não suportar, então colocamos em try/except-like safe call
+	if anim_hsm.has_method("dispatch"):
+		anim_hsm.dispatch(event_name, cargo)
+	else:
+		print("[HSM] dispatch não disponível para evento:", event_name)
