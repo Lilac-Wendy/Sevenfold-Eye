@@ -977,6 +977,8 @@ platform_floor_layers = 4294967279
 script = ExtResource("1_4flbx")
 attack_gravity_mode = 1
 
+[node name="ComponentContainer" type="Node" parent="."]
+
 [node name="AttackCooldownTimer" type="Timer" parent="."]
 
 [node name="AttackComboTimer" type="Timer" parent="."]
