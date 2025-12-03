@@ -20,10 +20,6 @@ config/features=PackedStringArray("4.5", "C#", "GL Compatibility")
 run/max_fps=120
 config/icon="res://icon.svg"
 
-[autoload]
-
-PhantomCameraManager="*res://addons/phantom_camera/scripts/managers/phantom_camera_manager.gd"
-
 [display]
 
 window/size/viewport_width=1280
@@ -40,10 +36,6 @@ movie_writer/ogv/encoding_speed=1
 movie_writer/ogv/keyframe_interval=128
 movie_writer/movie_file="D:/Project Files/Sevenfold Eye/Recording/2511.avi"
 movie_writer/disable_vsync=true
-
-[editor_plugins]
-
-enabled=PackedStringArray("res://addons/b3rdpscam/plugin.cfg", "res://addons/phantom_camera/plugin.cfg")
 
 [global_group]
 
