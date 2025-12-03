@@ -1003,21 +1003,17 @@ animation_player = NodePath("../../SpriteSheetPlayer")
 [node name="MovingState" type="LimboState" parent="AnimationHSM" node_paths=PackedStringArray("animation_player")]
 script = ExtResource("9_yhol4")
 animation_player = NodePath("../../SpriteSheetPlayer")
-metadata/_custom_type_script = "uid://cxfktnj0bcy7h"
 
 [node name="Jumping" type="LimboState" parent="AnimationHSM" node_paths=PackedStringArray("animation_player")]
 script = ExtResource("10_b71o8")
 animation_player = NodePath("../../SpriteSheetPlayer")
-metadata/_custom_type_script = "uid://cxfktnj0bcy7h"
 
 [node name="PlatformSwitch" type="LimboState" parent="AnimationHSM"]
 script = ExtResource("10_u2wkb")
-metadata/_custom_type_script = "uid://cxfktnj0bcy7h"
 
 [node name="Attack" type="LimboState" parent="AnimationHSM" node_paths=PackedStringArray("animation_player")]
 script = ExtResource("12_b71o8")
 animation_player = NodePath("../../TailPlayer")
-metadata/_custom_type_script = "uid://cxfktnj0bcy7h"
 
 [node name="TailPlayer" type="AnimationPlayer" parent="."]
 libraries = {
@@ -1142,6 +1138,7 @@ position = Vector2(nan, nan)
 position = Vector2(742.0781, 516.7639)
 
 [node name="Camera2D" parent="AnimatedSprite3D/Viewport/SubViewport/Tail" index="3" node_paths=PackedStringArray("SourceCamera", "TargetCamera2D", "TargetViewport")]
+visible = false
 SourceCamera = NodePath("../../../../../TailCamera")
 TargetCamera2D = NodePath(".")
 TargetViewport = NodePath("../..")

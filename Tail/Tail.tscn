@@ -1,8 +1,8 @@
 [gd_scene load_steps=5 format=3 uid="uid://b1dp1mdhmxxyb"]
 
 [ext_resource type="PackedScene" uid="uid://dh51i1q4l8ghn" path="res://Tail/tail_segment.tscn" id="1_1dgmm"]
-[ext_resource type="Script" uid="uid://da6swe4yy5rw2" path="res://Tail/Tail.cs" id="1_ns3r3"]
-[ext_resource type="Script" uid="uid://e37nqvamogwh" path="res://Tail/CameraSync3DTo2D.cs" id="4_cq53i"]
+[ext_resource type="Script" uid="uid://da6swe4yy5rw2" path="res://Tail/Scripts/Tail.cs" id="1_ns3r3"]
+[ext_resource type="Script" uid="uid://e37nqvamogwh" path="res://Tail/Scripts/CameraSync3DTo2D.cs" id="4_cq53i"]
 
 [sub_resource type="Gradient" id="Gradient_vniof"]
 

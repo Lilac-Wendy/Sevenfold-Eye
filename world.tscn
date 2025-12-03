@@ -1,11 +1,118 @@
-[gd_scene load_steps=9 format=3 uid="uid://b76hktigreapb"]
+[gd_scene load_steps=38 format=3 uid="uid://b76hktigreapb"]
 
-[ext_resource type="Environment" uid="uid://gdv7de8xtoo4" path="res://Assets/sky.tres" id="1_aqk2v"]
-[ext_resource type="PackedScene" uid="uid://cvsfkwlu4okae" path="res://platform.tscn" id="1_fj7yv"]
 [ext_resource type="PackedScene" uid="uid://biswlo8wva43r" path="res://Characters/Player/player.tscn" id="2_tlwt5"]
 [ext_resource type="Script" uid="uid://mnjkp5w7xsq" path="res://state_label.gd" id="3_tlwt5"]
 [ext_resource type="Texture2D" uid="uid://cmcw17766pbik" path="res://Assets/World/Tileset/sand.png" id="4_036b0"]
 [ext_resource type="Script" uid="uid://ctbfidrfxnlhd" path="res://Assets/World/Scripts/player_camera.gd" id="4_dwbse"]
+[ext_resource type="Texture2D" uid="uid://cdudn0s8b74vu" path="res://Assets/World/Background/Valley/background_valley-Sheet3.png" id="5_dwbse"]
+[ext_resource type="Texture2D" uid="uid://cjx5w8qpqiajo" path="res://Assets/World/Background/Valley/background_valley-Sheet5.png" id="5_pkg7o"]
+[ext_resource type="Texture2D" uid="uid://cgs7sttm7fsb2" path="res://Assets/World/Background/Valley/background_valley-Sheet2.png" id="7_gbfbk"]
+
+[sub_resource type="Shader" id="Shader_pkg7o"]
+code = "shader_type sky;
+
+uniform sampler2D sky_tex : source_color;
+
+uniform float energy : hint_range(0.0, 10.0, 0.1) = 1.0;
+uniform float gamma : hint_range(0.0,4.0) = 1.0;
+uniform sampler2D tint_ramp : source_color, repeat_disable, hint_default_white;
+uniform vec3 scale = vec3(1);
+uniform float triplanar_blend_power : hint_range(0.0,40.0) = 4.0;
+uniform float seamless_blend : hint_range(0.0,5) = 0.1;
+
+vec4 textureSeamless(sampler2D tex, vec2 uv, vec2 padding){
+	vec2 inv_scale = 1.0 / (1.0 + 2.0 * padding);
+
+	// Get partial derivatives here for textureGrad() to avoid mipmapping seams
+	vec2 dx = dFdx(uv) * inv_scale;
+	vec2 dy = dFdy(uv) * inv_scale;
+
+	// Textures need to repeat somewhere. In addition, repeat must be enabled on the sampler
+	uv = fract(uv+0.5)-0.5;
+
+	// Get the bilinear blend factors. This is actually undefined for padding = 0
+	vec2 u = smoothstep(-padding, padding, uv);
+
+	// Apply scale
+	uv *= inv_scale;
+
+	// Bilinear interpolation
+	inv_scale = 0.5 * (1.0 - inv_scale);
+	vec4 lower_right = textureGrad(tex, uv - vec2(-1,-1) * inv_scale,  dx, dy);
+	vec4 lower_left = textureGrad(tex, uv - vec2(1,-1) * inv_scale,  dx, dy);
+	vec4 upper_right = textureGrad(tex, uv - vec2(-1,1) * inv_scale, dx, dy);
+	vec4 upper_left = textureGrad(tex, uv - vec2(1,1) * inv_scale, dx, dy);
+
+	lower_right = mix(lower_left, lower_right, u.x);
+	upper_right = mix(upper_left, upper_right, u.x);
+
+	return mix(upper_right, lower_right, u.y);
+}
+
+// \"p\" point being textured
+// \"n\" surface normal at \"p\"
+// \"k\" controls the sharpness of the blending in the transitions areas
+// \"s\" texture sampler
+vec4 boxmap( in sampler2D s, in vec3 p, in vec3 n, in float k )
+{
+    // project+fetch
+    vec4 x = textureSeamless( s, p.yz, vec2(seamless_blend) );
+    vec4 y = textureSeamless( s, p.zx, vec2(seamless_blend) );
+    vec4 z = textureSeamless( s, p.xy, vec2(seamless_blend) );
+
+    // blend weights
+    vec3 w = pow( abs(n), vec3(k) );
+
+    // blend and return
+    return (x*w.x + y*w.y + z*w.z) / (w.x + w.y + w.z);
+}
+
+void sky() {
+	// Ray direction
+	vec3 rd = EYEDIR;
+	
+	// Apply scaling
+	vec3 p = rd;
+	p = normalize(rd / scale) * scale;
+	vec3 n = normalize(p / scale);
+	
+	// Triplanar mapping of sky texture
+	COLOR = boxmap(sky_tex, p, n, triplanar_blend_power).rgb;
+	COLOR = energy * pow(COLOR, vec3(gamma));
+	COLOR *= textureLod(tint_ramp, SKY_COORDS.yx, 0.0).rgb;
+	
+	// Alpha of tint ramp determines transparency of sky texture
+	COLOR = mix(textureLod(tint_ramp, SKY_COORDS.yx, 0.0).rgb, COLOR, textureLod(tint_ramp, SKY_COORDS.yx, 0.0).a);
+}"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_wse8f"]
+load_path = "res://.godot/imported/Sky_002.png-8f7e91520a7495ebe7ce2982b817bc45.s3tc.ctex"
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_ic0uy"]
+load_path = "res://.godot/imported/Sky_001.png-ae00a71c3749f3d6b610e814466a467e.s3tc.ctex"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_k3n1d"]
+shader = SubResource("Shader_pkg7o")
+shader_parameter/sky_tex = SubResource("CompressedTexture2D_wse8f")
+shader_parameter/energy = 1.30000001937156
+shader_parameter/gamma = 0.3330000158175
+shader_parameter/tint_ramp = SubResource("CompressedTexture2D_ic0uy")
+shader_parameter/scale = Vector3(1, 0.5, 1)
+shader_parameter/triplanar_blend_power = 4.0
+shader_parameter/seamless_blend = 0.30000001425
+
+[sub_resource type="Sky" id="Sky_2o6r5"]
+sky_material = SubResource("ShaderMaterial_k3n1d")
+
+[sub_resource type="Environment" id="Environment_70uel"]
+background_mode = 2
+background_color = Color(0.663666, 0.48687375, 0.36894885, 0.11764706)
+sky = SubResource("Sky_2o6r5")
+sky_custom_fov = 60.0
+sky_rotation = Vector3(0, 3.4906585, 0)
+ambient_light_source = 3
+reflected_light_source = 2
+glow_intensity = 1.44
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dwbse"]
 albedo_texture = ExtResource("4_036b0")
@@ -17,10 +124,128 @@ texture_filter = 5
 [sub_resource type="PlaneMesh" id="PlaneMesh_tlwt5"]
 material = SubResource("StandardMaterial3D_dwbse")
 
-[node name="World" type="Node3D"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gbfbk"]
+transparency = 2
+alpha_scissor_threshold = 0.5
+alpha_antialiasing_mode = 0
+albedo_texture = ExtResource("5_pkg7o")
+uv1_scale = Vector3(10, 1, 1)
+texture_filter = 0
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_ioo17"]
+material = SubResource("StandardMaterial3D_gbfbk")
+size = Vector2(100, 6)
+center_offset = Vector3(0, 2.6, 0)
+orientation = 2
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_ioo17"]
+load_path = "res://.godot/imported/background_valley-Sheet4.png-9fed3f515c9d66ab3ee09abb2954c2e5.s3tc.ctex"
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wse8f"]
+transparency = 1
+albedo_texture = SubResource("CompressedTexture2D_ioo17")
+uv1_scale = Vector3(16, 1, 1)
+texture_filter = 0
+grow_amount = 9.0
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_ic0uy"]
+material = SubResource("StandardMaterial3D_wse8f")
+size = Vector2(100, 4)
+center_offset = Vector3(0, 2, 0)
+orientation = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_k3n1d"]
+transparency = 2
+alpha_scissor_threshold = 0.5
+alpha_antialiasing_mode = 0
+albedo_texture = ExtResource("5_dwbse")
+uv1_scale = Vector3(4, 1, 1)
+texture_filter = 0
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_2o6r5"]
+material = SubResource("StandardMaterial3D_k3n1d")
+size = Vector2(500, 100)
+center_offset = Vector3(0, 15, 0)
+orientation = 2
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_70uel"]
+load_path = "res://.godot/imported/background_valley-Sheet3.png-6e80beea453d6e0c976d2ca5c9654c23.s3tc.ctex"
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hiqwa"]
+transparency = 2
+alpha_scissor_threshold = 0.793
+alpha_antialiasing_mode = 0
+blend_mode = 3
+albedo_texture = SubResource("CompressedTexture2D_70uel")
+uv1_scale = Vector3(4, 1, 1)
+texture_filter = 0
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_2u3nc"]
+material = SubResource("StandardMaterial3D_hiqwa")
+size = Vector2(300, 70)
+center_offset = Vector3(10, 20, 5)
+orientation = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_udxuc"]
+transparency = 2
+alpha_scissor_threshold = 0.5
+alpha_antialiasing_mode = 0
+albedo_texture = ExtResource("7_gbfbk")
+texture_filter = 0
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_ikiii"]
+material = SubResource("StandardMaterial3D_udxuc")
+size = Vector2(100, 100)
+orientation = 2
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_gbfbk"]
+load_path = "res://.godot/imported/background_valley-Sheet2.png-bb189bc0c3e7c58c962c029e40be9aef.s3tc.ctex"
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ioo17"]
+transparency = 2
+alpha_scissor_threshold = 0.5
+alpha_antialiasing_mode = 0
+blend_mode = 1
+albedo_texture = SubResource("CompressedTexture2D_gbfbk")
+texture_filter = 0
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_wse8f"]
+material = SubResource("StandardMaterial3D_ioo17")
+size = Vector2(100, 100)
+center_offset = Vector3(10, 0, -10)
+orientation = 2
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_dwbse"]
+load_path = "res://.godot/imported/dry_grass.png-ec0a7fd1426110af3ad582b39ec0185e.s3tc.ctex"
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mi635"]
+albedo_texture = SubResource("CompressedTexture2D_dwbse")
+uv1_scale = Vector3(100, 0.5, 1)
+uv1_offset = Vector3(0, 0.485, 0)
+
+[sub_resource type="BoxMesh" id="BoxMesh_pkg7o"]
+lightmap_size_hint = Vector2i(14, 21)
+material = SubResource("StandardMaterial3D_mi635")
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_gbfbk"]
+size = Vector3(100, 1, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ioo17"]
+size = Vector3(10, 0.5, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ry5bi"]
+albedo_texture = ExtResource("4_036b0")
+uv1_scale = Vector3(10, 1.265, 1)
+uv1_triplanar_sharpness = 0.12500009
+
+[sub_resource type="BoxMesh" id="BoxMesh_wse8f"]
+lightmap_size_hint = Vector2i(14, 21)
+material = SubResource("StandardMaterial3D_ry5bi")
+
+[node name="RunningGame" type="Node3D"]
 process_mode = 1
 
-[node name="SubViewportContainer" type="SubViewportContainer" parent="."]
+[node name="GUI_HUD" type="SubViewportContainer" parent="."]
 texture_filter = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -29,53 +254,16 @@ grow_horizontal = 2
 grow_vertical = 2
 stretch = true
 
-[node name="SubViewport" type="SubViewport" parent="SubViewportContainer"]
-handle_input_locally = false
+[node name="3D_World" type="SubViewport" parent="GUI_HUD"]
 use_hdr_2d = true
 size = Vector2i(1280, 720)
 render_target_update_mode = 4
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="SubViewportContainer/SubViewport"]
-environment = ExtResource("1_aqk2v")
+[node name="WorldEnvironment" type="WorldEnvironment" parent="GUI_HUD/3D_World"]
+environment = SubResource("Environment_70uel")
 
-[node name="Foreground" parent="SubViewportContainer/SubViewport" instance=ExtResource("1_fj7yv")]
-transform = Transform3D(1, 0, 0, 0, 0.99999994, 0, 0, 0, 1, 0, 2.1654048, 10)
-
-[node name="Middleground" parent="SubViewportContainer/SubViewport" instance=ExtResource("1_fj7yv")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.1654048, 0)
-
-[node name="Background" parent="SubViewportContainer/SubViewport" instance=ExtResource("1_fj7yv")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.1654048, -10)
-
-[node name="player" parent="SubViewportContainer/SubViewport" instance=ExtResource("2_tlwt5")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.004744351, 2.8041492, 0)
-disable_mode = 1
-axis_lock_linear_z = true
-move_speed = 4.0
-jump_force = 6.0
-gravity = 15.0
-move_threshold = 0.5
-
-[node name="SpringArm3D" type="SpringArm3D" parent="SubViewportContainer/SubViewport/player"]
-transform = Transform3D(1, 0, 0, 0, 0.99999994, 0, 0, 0, 0.99999994, 0, 0, 0)
-collision_mask = 0
-spring_length = 5.0
-
-[node name="PlayerCamera" type="Camera3D" parent="SubViewportContainer/SubViewport/player/SpringArm3D" node_paths=PackedStringArray("player")]
-physics_interpolation_mode = 1
-transform = Transform3D(0.999977, -1.5476828e-09, -1.5463775e-09, 1.5463559e-09, 0.9999759, -0.00085842976, 1.5476799e-09, 0.000858415, 0.99999315, 0, 0, 2)
-keep_aspect = 0
-current = true
-fov = 60.0
-size = 0.05
-far = 15.0
-script = ExtResource("4_dwbse")
-player = NodePath("../..")
-follow_speed = 10.0
-deadzone_size = Vector3(1, 0, 0)
-
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="SubViewportContainer/SubViewport"]
-transform = Transform3D(0.4415112, 0.8816974, 0.16636568, -0.62088525, 0.1663657, 0.76604444, 0.64774185, -0.44151112, 0.6208852, -0.20192218, 13.371029, 7.57631)
+[node name="GlobalLighting" type="DirectionalLight3D" parent="GUI_HUD/3D_World"]
+transform = Transform3D(0.4415112, 0.8816974, 0.16636571, -0.62088525, 0.16636574, 0.76604444, 0.64774185, -0.44151118, 0.6208852, -0.20192218, 13.371029, 7.57631)
 light_color = Color(1.1976054, 0.9945455, 0.8564048, 1)
 light_energy = 0.5
 light_indirect_energy = 1.93
@@ -84,14 +272,155 @@ light_specular = 2.0
 shadow_enabled = true
 directional_shadow_mode = 0
 
-[node name="Voidground" type="Node3D" parent="SubViewportContainer/SubViewport"]
+[node name="player" parent="GUI_HUD/3D_World" instance=ExtResource("2_tlwt5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.004744351, 2.8041492, 0)
+disable_mode = 1
+axis_lock_linear_z = true
+move_speed = 4.0
+jump_force = 6.0
+gravity = 15.0
+move_threshold = 0.5
+
+[node name="SpringArm3D" type="SpringArm3D" parent="GUI_HUD/3D_World/player"]
+transform = Transform3D(1, 0, 0, 0, 0.99999994, 0, 0, 0, 0.99999994, 0, 0, 0)
+collision_mask = 0
+spring_length = 5.0
+
+[node name="PlayerCamera" type="Camera3D" parent="GUI_HUD/3D_World/player/SpringArm3D" node_paths=PackedStringArray("player")]
+physics_interpolation_mode = 1
+transform = Transform3D(0.999977, -1.5476828e-09, -1.5463775e-09, 1.5463559e-09, 0.9999759, -0.00085842976, 1.5476799e-09, 0.000858415, 0.99999315, 0, 0, 2)
+keep_aspect = 0
+current = true
+fov = 60.0
+size = 0.05
+script = ExtResource("4_dwbse")
+player = NodePath("../..")
+follow_speed = 10.0
+deadzone_size = Vector3(1, 0, 0)
+
+[node name="Voidground" type="Node3D" parent="GUI_HUD/3D_World"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3090553, 0)
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/Voidground"]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="GUI_HUD/3D_World/Voidground"]
 transform = Transform3D(250, 0, 0, 0, 1, 0, 0, 0, 250, 0, 0.7179711, 0)
 mesh = SubResource("PlaneMesh_tlwt5")
 
-[node name="StateLabel" type="Label" parent="SubViewportContainer"]
+[node name="Parallax" type="Node3D" parent="GUI_HUD/3D_World/Voidground"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -45)
+
+[node name="NearestAsset" type="MeshInstance3D" parent="GUI_HUD/3D_World/Voidground/Parallax"]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0)
+mesh = SubResource("PlaneMesh_ioo17")
+
+[node name="NearAsset" type="MeshInstance3D" parent="GUI_HUD/3D_World/Voidground/Parallax"]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, -1.5101814, -10)
+mesh = SubResource("PlaneMesh_ic0uy")
+
+[node name="FarAsset" type="MeshInstance3D" parent="GUI_HUD/3D_World/Voidground/Parallax"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -39.061813)
+mesh = SubResource("PlaneMesh_2o6r5")
+
+[node name="ShadowFarAsset" type="MeshInstance3D" parent="GUI_HUD/3D_World/Voidground/Parallax"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -39.061813)
+mesh = SubResource("PlaneMesh_2u3nc")
+
+[node name="MostFarAsset" type="MeshInstance3D" parent="GUI_HUD/3D_World/Voidground/Parallax"]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 42.043224, -49.061813)
+mesh = SubResource("PlaneMesh_ikiii")
+
+[node name="LightMostFarAsset" type="MeshInstance3D" parent="GUI_HUD/3D_World/Voidground/Parallax"]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 42.043224, -49.061813)
+mesh = SubResource("PlaneMesh_wse8f")
+
+[node name="Background" type="Node3D" parent="GUI_HUD/3D_World"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, -10)
+
+[node name="Floor" type="StaticBody3D" parent="GUI_HUD/3D_World/Background"]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="GUI_HUD/3D_World/Background/Floor"]
+transform = Transform3D(100, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+mesh = SubResource("BoxMesh_pkg7o")
+skeleton = NodePath("")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="GUI_HUD/3D_World/Background/Floor"]
+shape = SubResource("BoxShape3D_gbfbk")
+
+[node name="Floating Sand" type="Area3D" parent="GUI_HUD/3D_World/Background" groups=["FloatingPlatform"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15.275402, 1.1840112, 0)
+
+[node name="Ground" type="StaticBody3D" parent="GUI_HUD/3D_World/Background/Floating Sand"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="GUI_HUD/3D_World/Background/Floating Sand/Ground"]
+shape = SubResource("BoxShape3D_ioo17")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="GUI_HUD/3D_World/Background/Floating Sand/Ground/CollisionShape3D"]
+transform = Transform3D(10, 0, 0, 0, 0.5, 0, 0, 0, 1, 0, 0, 0)
+mesh = SubResource("BoxMesh_wse8f")
+skeleton = NodePath("")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="GUI_HUD/3D_World/Background/Floating Sand"]
+shape = SubResource("BoxShape3D_ioo17")
+
+[node name="Middleground" type="Node3D" parent="GUI_HUD/3D_World"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+
+[node name="Floor" type="StaticBody3D" parent="GUI_HUD/3D_World/Middleground"]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="GUI_HUD/3D_World/Middleground/Floor"]
+transform = Transform3D(100, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+mesh = SubResource("BoxMesh_pkg7o")
+skeleton = NodePath("")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="GUI_HUD/3D_World/Middleground/Floor"]
+shape = SubResource("BoxShape3D_gbfbk")
+
+[node name="Floating Sand" type="Area3D" parent="GUI_HUD/3D_World/Middleground" groups=["FloatingPlatform"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15.275402, 1.1840112, 0)
+
+[node name="Ground" type="StaticBody3D" parent="GUI_HUD/3D_World/Middleground/Floating Sand"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="GUI_HUD/3D_World/Middleground/Floating Sand/Ground"]
+shape = SubResource("BoxShape3D_ioo17")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="GUI_HUD/3D_World/Middleground/Floating Sand/Ground/CollisionShape3D"]
+transform = Transform3D(10, 0, 0, 0, 0.5, 0, 0, 0, 1, 0, 0, 0)
+mesh = SubResource("BoxMesh_wse8f")
+skeleton = NodePath("")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="GUI_HUD/3D_World/Middleground/Floating Sand"]
+shape = SubResource("BoxShape3D_ioo17")
+
+[node name="Foreground" type="Node3D" parent="GUI_HUD/3D_World"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 10)
+
+[node name="Floor" type="StaticBody3D" parent="GUI_HUD/3D_World/Foreground"]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="GUI_HUD/3D_World/Foreground/Floor"]
+transform = Transform3D(100, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+mesh = SubResource("BoxMesh_pkg7o")
+skeleton = NodePath("")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="GUI_HUD/3D_World/Foreground/Floor"]
+shape = SubResource("BoxShape3D_gbfbk")
+
+[node name="Floating Sand" type="Area3D" parent="GUI_HUD/3D_World/Foreground" groups=["FloatingPlatform"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15.275402, 1.1840112, 0)
+
+[node name="Ground" type="StaticBody3D" parent="GUI_HUD/3D_World/Foreground/Floating Sand"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="GUI_HUD/3D_World/Foreground/Floating Sand/Ground"]
+shape = SubResource("BoxShape3D_ioo17")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="GUI_HUD/3D_World/Foreground/Floating Sand/Ground/CollisionShape3D"]
+transform = Transform3D(10, 0, 0, 0, 0.5, 0, 0, 0, 1, 0, 0, 0)
+mesh = SubResource("BoxMesh_wse8f")
+skeleton = NodePath("")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="GUI_HUD/3D_World/Foreground/Floating Sand"]
+shape = SubResource("BoxShape3D_ioo17")
+
+[node name="StateLabel" type="Label" parent="GUI_HUD"]
+texture_filter = 1
 layout_mode = 2
 text = "aaaaaaaaaaaaaaaa EU VOU"
 script = ExtResource("3_tlwt5")
